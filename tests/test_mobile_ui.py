@@ -89,6 +89,16 @@ with sync_playwright() as p:
         check("radar activates", lambda: (page.locator("#radar").click(), page.locator("#radarCanvas").wait_for(state="visible", timeout=2000)))
         page.screenshot(path=str(OUT / "04-radar.png"), full_page=True)
         assert page.locator("#radar").is_disabled(), "Radar should only be usable once"
+        # Check landscape rotation and restore portrait; the WebGL viewport must resize.
+        page.set_viewport_size({"width": 852, "height": 393})
+        page.wait_for_timeout(300)
+        page.screenshot(path=str(OUT / "06-landscape.png"), full_page=True)
+        canvas_box = page.locator("#game canvas").bounding_box()
+        assert abs(canvas_box["width"] - 852) < 3 and abs(canvas_box["height"] - 393) < 3, "WebGL canvas did not resize in landscape"
+        report["checks"].append({"name":"landscape layout adapts","status":"passed"})
+        page.set_viewport_size({"width": 393, "height": 852})
+        page.wait_for_timeout(200)
+        page.screenshot(path=str(OUT / "07-portrait-restored.png"), full_page=True)
         assert not report["page_errors"], "JavaScript errors: " + "; ".join(report["page_errors"])
         assert not report["console_errors"], "Console errors: " + "; ".join(report["console_errors"])
         report["checks"].append({"name": "no uncaught JavaScript errors", "status": "passed"})
