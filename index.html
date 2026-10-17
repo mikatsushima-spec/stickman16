@@ -3,7 +3,8 @@
 </style><link rel="manifest" href="./manifest.webmanifest"></head><body><div id="world"><div id="scene"></div><div id="stickLayer"></div></div><div id="aim">＋</div><div id="hud"><div>◷ 残り時間 <span id="time">5:00</span></div><div>● 倒した数 <span id="score">0 / 16</span></div></div><div id="compass">◀ ━━━━━ 180° ━━━━━ ▶</div><div id="radar"><canvas width="200" height="200"></canvas></div><div id="hint">スワイプした方向を見る<br>180°の範囲で探索</div><div id="controls"><div class="joy" id="joy"><span></span></div><div class="actions"><button id="fire">発射</button><button id="scan">◎<br>レーダー</button></div></div><div id="notice"></div><div id="menu"><div id="card"><small>STICKMAN SURVIVAL 16</small><h1>FOOD MARKET</h1><p>カラフルな食品の中に隠れた<br>棒人間16人を探そう！<br>5分以内に全員を見つけよう。</p><button id="start">▶ PLAY</button></div></div><script>
 const $=id=>document.getElementById(id);const scene=$('scene'),layer=$('stickLayer');let yaw=0,pitch=0,playing=false,remaining=300,kills=0,used=false,scanUntil=0,last=0,drag=null;
 // Four targets are painted in the reference art. Extra game targets are overlaid in matching colors.
-// Targets stand on floor or directly on produce displays; none float in empty air.\nconst placements=[
+// Targets stand on floor or directly on produce displays; none float in empty air.
+const placements=[
 [.105,.348,'#e34b52'],[.34,.326,'#ebcf2d'],[.515,.425,'#4eae55'],[.68,.345,'#ed6573'],
 [.77,.305,'#789fe1'],[.89,.375,'#eaa443'],[.185,.53,'#e85850'],[.405,.475,'#e8b64b'],
 [.62,.50,'#55a84c'],[.815,.47,'#ec874c'],[.10,.61,'#d65c52'],[.31,.59,'#edc943'],
