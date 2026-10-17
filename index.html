@@ -6,11 +6,11 @@
 <div id="game"></div><div id="shade"></div><div id="loading">MARKET HUNT 16<small>食品売り場を準備しています…</small></div>
 <div id="top"><div id="brand" class="glass">STAGE 01<b>FOOD MARKET</b></div><div id="stats" class="glass"><small>TIME LEFT</small><div id="timer">05:00</div><div id="count">TARGETS　0 / 16</div></div></div>
 <div id="cross"></div><div id="toast"></div><div id="radarPanel" class="glass"><canvas id="radarCanvas" width="232" height="232"></canvas></div>
-<div id="bottom"><div id="hint" class="glass">スワイプした方向を見る<br>左右180°まで・近くを狙えばHIT</div><div id="actions"><button id="radar">◎<br>RADAR</button><button id="shoot">●<br>FIRE</button></div></div>
+<div id="bottom"><div id="hint" class="glass">上下左右にスワイプして狙う<br>左右180°まで・近くを狙えばHIT</div><div id="actions"><button id="radar">◎<br>RADAR</button><button id="shoot">●<br>FIRE</button></div></div>
 <div id="menu"><div id="card" class="glass"><div id="eyebrow">STICKMAN SURVIVAL 16</div><h1>PARK<br>HUNT</h1><div id="subtitle">STAGE 01 · FOOD MARKET</div><p id="desc">食品売り場に隠れた<br><b>16人の棒人間</b>を見つけよう。<br>制限時間は5分。敵は動かない。</p><div id="difflabel">棒人間の見つけやすさ：ふつう</div><input id="difficulty" type="range" min="1" max="5" value="3"><button id="start">▶ PLAY</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
-const $=s=>document.getElementById(s),scene=new THREE.Scene();scene.background=new THREE.Color(0xf0e4d5);scene.fog=null;
+const $=s=>document.getElementById(s),scene=new THREE.Scene();scene.background=new THREE.Color(0xffedc9);scene.fog=null;
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.06,65);camera.position.set(0,1.65,7.8);camera.rotation.order='YXZ';
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;$('game').appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xe6f4ff,0x607a4b,2.0));const sun=new THREE.DirectionalLight(0xffedce,2.25);sun.position.set(-7,15,9);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-22;sun.shadow.camera.right=22;sun.shadow.camera.top=22;sun.shadow.camera.bottom=-22;sun.shadow.bias=-.0003;scene.add(sun);
@@ -19,30 +19,32 @@ function box(w,h,d,x,y,z,ma,rot=0){let o=new THREE.Mesh(new THREE.BoxGeometry(w,
 function cyl(r1,r2,h,x,y,z,ma,n=9){let o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,n),ma);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
 function ball(r,x,y,z,ma,n=9){let o=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),ma);o.position.set(x,y,z);o.castShadow=true;scene.add(o);return o}
 function beam(a,b,r,ma){let start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),v=end.clone().sub(start),o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,v.length(),7),ma);o.position.copy(start.add(end).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());o.castShadow=true;scene.add(o);return o}
-// Compact, bright indoor department store: floor, walls and display departments
+// Bright, deliberately chunky Roblox-style supermarket, based on the selected A concept.
 let seed=41;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
-const tile=mat(0xffdba4,.85),cream=mat(0xffebc0),beige=mat(0xd3b7a1),bronze=mat(0x8f7463,.4),pink=mat(0xe8b3ae),navy=mat(0x526a80),mint=mat(0xa7c9ad),white=mat(0xf6f0e8),glass=mat(0xc7e5e8,.12),fabric=[pink,navy,mint,beige,white];
-box(22,.25,19,0,-.2,-1,mat(0xffdba4));
-for(let x=-10.5;x<=10.5;x+=1.5)for(let z=-10;z<=8;z+=1.5){box(1.46,.008,1.46,x,.005,z,(Math.round(x+z)%3===0)?cream:tile)}
-box(22,.25,19,0,5.2,-1,cream);
-box(22,5.2,.24,0,2.5,-10.4,cream);box(.25,5.2,19,-11,2.5,-1,cream);box(.25,5.2,19,11,2.5,-1,cream);
-for(let x of [-7,-2,3,8])for(let z of [-7,0,6]){let l=box(1.5,.045,.65,x,5.02,z,white);l.material.emissive=new THREE.Color(0xffefda);l.material.emissiveIntensity=.5}
-for(let x of [-7,7])for(let z of [-5,4])box(.7,5,.7,x,2.5,z,mat(x<0?0xf46b78:0xf5b744));
-// Chunky food shelves: identical colorful packages in orderly rows
-const foods=[mat(0xf34e45),mat(0xf9d044),mat(0x51b45b),mat(0xf59b42),mat(0x779ee9),mat(0xe68ac0)];
-function shelf(x,z,w=3){box(w,1,.95,x,.5,z,m.wood2);box(w,.12,1.1,x,1.07,z,white);for(let row=0;row<2;row++)for(let i=0;i<7;i++){let xx=x-w*.42+i*w*.14,zz=z-.25+row*.55;ball(.23,xx,1.34,zz,foods[(i+row+Math.floor(x+z+30))%foods.length]);}}
-shelf(-7,-7);shelf(-7,-2);shelf(7,-7);shelf(7,-2);shelf(-4,3);shelf(4,3);
-function rack(x,z){box(3.3,1,.85,x,.5,z,mat(0x78b9a3));for(let row=0;row<2;row++)for(let i=0;i<8;i++){let xx=x-1.35+i*.38,zz=z-.2+row*.42;box(.28,.58,.32,xx,1.29,zz,foods[(i+row)%foods.length]);box(.2,.07,.2,xx,1.61,zz,white)}}
-rack(-5,-5);rack(5,-5);rack(-5,1);rack(5,1);
-function counter(x,z,w=2.5){box(w,.9,1.3,x,.45,z,mat(0xeeb25d));for(let row=0;row<3;row++)for(let i=0;i<6;i++)ball(.21,x-w*.39+i*w*.155,1.1,z-.45+row*.43,foods[(i+row)%foods.length])}
-counter(-3,-7.8);counter(3,-7.8);counter(8,4);
-function sign(x,y,z,label,bg){const c=document.createElement('canvas');c.width=512;c.height=160;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,160);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 64px Arial';ctx.fillText(label,256,80);const texture=new THREE.CanvasTexture(c),mesh=new THREE.Mesh(new THREE.PlaneGeometry(3.3,1.05),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));mesh.position.set(x,y,z);scene.add(mesh)}
-sign(-6.2,3.35,-10.23,'FRESH','#48a74e');sign(6.2,3.35,-10.23,'DAIRY','#538bc8');sign(0,3.3,-10.23,'FOOD','#e97a48');
-for(let x of [-9.5,9.5])for(let z of [-8,0,6]){box(.9,1.1,.7,x,.55,z,mat(0xe8b85d));for(let j=0;j<3;j++)ball(.26,x+(j-1)*.25,1.3,z,foods[(j+Math.round(z+10))%foods.length])}
-// Repeated food displays leave a clear central aisle.
+const cream=mat(0xffedc9),tile=mat(0xffd69e,.75),peach=mat(0xf5ba8c),white=mat(0xfff7e4),pink=mat(0xf36b77),yellow=mat(0xffcf49),green=mat(0x54ac4b),darkgreen=mat(0x368e45),blue=mat(0x66a9e6),orange=mat(0xf1a049),wood=mat(0xd29a61),shelfMat=mat(0xd9c9b4),purple=mat(0x9875bd);
+const foodMats=[pink,yellow,green,orange,blue,purple,mat(0xd95542),mat(0x92b94b)];
+box(23,.25,21,0,-.2,-1,tile);
+for(let x=-10;x<11;x+=2)for(let z=-10;z<9;z+=2)box(1.97,.008,1.97,x,.002,z,((x+z)/2)%2===0?cream:tile);
+box(23,.3,21,0,5.2,-1,peach);box(23,5.2,.2,0,2.5,-11,cream);box(.2,5.2,21,-11.5,2.5,-1,cream);box(.2,5.2,21,11.5,2.5,-1,cream);
+for(let x of [-8,-3,2,7])for(let z of [-8,-2,5]){let o=box(1.7,.045,.85,x,5.01,z,white);o.material.emissive=new THREE.Color(0xffebca);o.material.emissiveIntensity=.5}
+for(let [x,z,c] of [[-7,-4,pink],[0,-6,yellow],[7,-4,pink],[-7,5,orange],[7,5,green]])box(1,5,1,x,2.5,z,c);
+function sign(x,z,label,bg,w=4){const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,128);ctx.fillStyle='#fff';ctx.font='bold 73px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,256,64);let o=new THREE.Mesh(new THREE.PlaneGeometry(w,.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));o.position.set(x,3.4,z);scene.add(o)}
+sign(-7,-10.85,'FRESH','#4ba548',5);sign(0,-10.85,'MEAT','#e26868',3.5);sign(7,-10.85,'DAIRY','#548ed4',4.5);
+function apple(x,y,z,c){ball(.24,x,y,z,c);box(.028,.08,.03,x,y+.24,z,darkgreen)}
+function banana(x,y,z){let p=ball(.24,x,y,z,yellow);p.scale.set(1.2,.7,.7);p.rotation.z=.35}
+function cabbage(x,y,z){let p=ball(.27,x,y,z,green);p.scale.set(1.08,.75,1.04)}
+function food(x,y,z,type){if(type===0)apple(x,y,z,pink);else if(type===1)banana(x,y,z);else if(type===2)cabbage(x,y,z);else if(type===3)apple(x,y,z,orange);else if(type===4)apple(x,y,z,purple);else apple(x,y,z,green)}
+function bin(x,z,type){box(3.3,.84,1.8,x,.42,z,wood);box(3.42,.13,1.93,x,.9,z,orange);for(let r=0;r<3;r++)for(let i=0;i<8;i++)food(x-1.4+i*.4,1.21,z-.58+r*.58,type)}
+// Big, repeating food islands, close enough that products fill the foreground.
+bin(-8,3.8,0);bin(-8,-1,1);bin(-8,-7.4,2);bin(8,3.8,3);bin(8,-1,2);bin(8,-7.4,0);
+bin(-3.5,-7.4,4);bin(3.5,-7.4,1);
+function grocery(x,z,kind){box(3.7,2.7,.8,x,1.35,z,shelfMat);for(let row=0;row<3;row++){box(3.8,.11,.9,x,.45+row*.8,z,white);for(let i=0;i<10;i++){let px=x-1.6+i*.35,py=.83+row*.8,ma=foodMats[(kind+row+i)%foodMats.length];box(.29,.52,.43,px,py,z+.03,ma);box(.19,.12,.012,px,py+.05,z+.254,white)}}}
+grocery(-8,-9.7,1);grocery(8,-9.7,3);grocery(-9.8,7.4,4);grocery(9.8,7.4,2);
+function cartons(x,z){box(3.2,.8,1.5,x,.4,z,blue);box(3.3,.12,1.6,x,.85,z,white);for(let row=0;row<2;row++)for(let i=0;i<8;i++){let px=x-1.4+i*.4,pz=z-.35+row*.7;box(.29,.58,.33,px,1.2,pz,foodMats[(i+row)%foodMats.length]);box(.23,.08,.26,px,1.53,pz,white)}}
+cartons(-3.4,2.6);cartons(3.4,2.6);
 // 16 camouflage stick people, with depth occlusion
-const enemyPos=[[-8,-8],[-6,-6],[-3,-8],[3,-8],[8,-8],[-8,-3],[-5,-4],[5,-4],[8,-3],[-9,2],[-5,1],[5,1],[9,2],[-7,5],[0,-5],[7,5]];
-const enemies=[];function stick(x,z,i){let g=new THREE.Group(),shade=[0xb99a50,0x7da26a,0xb86d58,0xa99d6c,0x728f9f][i%4],sm=mat(shade);let head=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),sm);head.position.y=1.45;g.add(head);function limb(a,b){let v=new THREE.Vector3(...b).sub(new THREE.Vector3(...a));let mesh=new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,v.length(),6),sm);mesh.position.copy(new THREE.Vector3(...a).add(new THREE.Vector3(...b)).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());g.add(mesh)}limb([0,1.27,0],[0,.62,0]);limb([0,1.15,0],[-.3,.83,0]);limb([0,1.15,0],[.3,.83,0]);limb([0,.62,0],[-.26,.12,0]);limb([0,.62,0],[.27,.12,0]);g.position.set(x,0,z);g.rotation.y=rnd()*6.28;g.scale.setScalar(.9+rnd()*.14);scene.add(g);enemies.push({g,alive:true})}
+const enemyPos=[[-8.2,-8],[-6.8,-7.3],[-3.5,-7.3],[3.5,-7.3],[8,-7.5],[-8,-1.3],[-6.9,-1],[7,-1],[8.2,-1.5],[-8,4],[-6.9,3.7],[7,3.8],[8,4],[-3.3,2.7],[3.4,2.7],[0,-9.3]];
+const enemies=[];function stick(x,z,i){let g=new THREE.Group(),shade=[0xc9554c,0xe0bd49,0x5eaa53,0xe4a048,0x728ed3,0x9b7aba][i%4],sm=mat(shade);let head=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),sm);head.position.y=1.45;g.add(head);function limb(a,b){let v=new THREE.Vector3(...b).sub(new THREE.Vector3(...a));let mesh=new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,v.length(),6),sm);mesh.position.copy(new THREE.Vector3(...a).add(new THREE.Vector3(...b)).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());g.add(mesh)}limb([0,1.27,0],[0,.62,0]);limb([0,1.15,0],[-.3,.83,0]);limb([0,1.15,0],[.3,.83,0]);limb([0,.62,0],[-.26,.12,0]);limb([0,.62,0],[.27,.12,0]);g.position.set(x,0,z);g.rotation.y=rnd()*6.28;g.scale.setScalar(.9+rnd()*.14);scene.add(g);enemies.push({g,alive:true})}
 enemyPos.forEach((p,i)=>stick(...p,i));
 let gun=new THREE.Group();camera.add(gun);scene.add(camera);const gunMat=mat(0x30383b,.55),gripMat=mat(0x161e20,.7),metal=mat(0x596368,.45);
 function gunbox(w,h,d,x,y,z,ma){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),ma);o.position.set(x,y,z);gun.add(o)}
