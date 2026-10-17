@@ -1,11 +1,11 @@
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-import json, os, time
+import json, os, time, hashlib
 
 URL = os.getenv("GAME_URL", "http://127.0.0.1:8765/")
 OUT = Path("test-results")
 OUT.mkdir(exist_ok=True)
-report = {"url": URL, "checks": [], "console_errors": [], "page_errors": []}
+report = {"url": URL, "checks": [], "console_errors": [], "page_errors": [], "screenshots": {}}
 
 def check(name, fn):
     try:
@@ -40,6 +40,12 @@ with sync_playwright() as p:
         check("3D renderer initialized", lambda: page.locator("#game canvas").wait_for(timeout=20000))
         check("PLAY starts game", lambda: (page.locator("#start").click(), page.locator("#menu").wait_for(state="hidden", timeout=5000)))
         page.screenshot(path=str(OUT / "02-gameplay.png"), full_page=True)
+        # Pixel diversity catches a blank WebGL canvas or a solid-color failure screen.
+        from PIL import Image, ImageStat
+        im = Image.open(OUT / "02-gameplay.png").convert("RGB")
+        std = ImageStat.Stat(im).stddev
+        assert max(std) > 18, f"Gameplay screenshot appears blank: channel stddev={std}"
+        report["checks"].append({"name":"nonblank gameplay screenshot","status":"passed","rgb_stddev":std})
         assert page.evaluate("window.__gameDebug().playing"), "Game is not running after PLAY"
         assert page.evaluate("window.__gameDebug().alive") == 16, "Expected 16 targets"
         initial = page.locator("#clock").inner_text()
@@ -90,6 +96,8 @@ with sync_playwright() as p:
         report["fatal_error"] = str(exc)
         page.screenshot(path=str(OUT / "error-state.png"), full_page=True)
     finally:
+        for shot in OUT.glob("*.png"):
+            report["screenshots"][shot.name] = {"bytes":shot.stat().st_size,"sha256":hashlib.sha256(shot.read_bytes()).hexdigest()}
         (OUT / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2))
         browser.close()
 if "fatal_error" in report:
