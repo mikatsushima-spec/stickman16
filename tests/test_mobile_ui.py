@@ -2,7 +2,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 import json, os, time, hashlib
 
-URL = os.getenv("GAME_URL", "http://127.0.0.1:8765/")
+URL = os.getenv("GAME_URL", "http://127.0.0.1:8765/?test=1")
 OUT = Path("test-results")
 OUT.mkdir(exist_ok=True)
 report = {"url": URL, "checks": [], "console_errors": [], "page_errors": [], "screenshots": {}}
@@ -99,6 +99,22 @@ with sync_playwright() as p:
         page.set_viewport_size({"width": 393, "height": 852})
         page.wait_for_timeout(200)
         page.screenshot(path=str(OUT / "07-portrait-restored.png"), full_page=True)
+        # Complete the mission: all sixteen distinct enemies must disappear.
+        for enemy_index in range(16):
+            if not page.evaluate("(i)=>window.__gameDebug().targets[i].alive", enemy_index):
+                continue
+            assert page.evaluate("(i)=>window.__gameTestAimAt(i)", enemy_index), f"Could not aim at enemy {enemy_index}"
+            page.locator("#fire").click()
+            assert not page.evaluate("(i)=>window.__gameDebug().targets[i].alive", enemy_index), f"Enemy {enemy_index} survived aimed shot"
+        assert page.evaluate("window.__gameDebug().kills") == 16, "Mission did not register all 16 hits"
+        assert page.locator("#menu").is_visible(), "Victory screen did not appear"
+        assert "MISSION CLEAR" in page.locator("#card h1").inner_text(), "Victory text missing"
+        page.screenshot(path=str(OUT / "08-mission-clear.png"), full_page=True)
+        report["checks"].append({"name":"all 16 targets removable and victory appears","status":"passed"})
+        page.locator("#start").click()
+        assert page.evaluate("window.__gameDebug().alive") == 16, "Retry failed to reset enemies"
+        assert page.evaluate("window.__gameDebug().kills") == 0, "Retry failed to reset score"
+        report["checks"].append({"name":"retry resets all targets and score","status":"passed"})
         assert not report["page_errors"], "JavaScript errors: " + "; ".join(report["page_errors"])
         assert not report["console_errors"], "Console errors: " + "; ".join(report["console_errors"])
         report["checks"].append({"name": "no uncaught JavaScript errors", "status": "passed"})
