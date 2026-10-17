@@ -13,6 +13,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Validate embedded game JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path("index.html").read_text()
+          scripts=re.findall(r'<script(?:\\s+type="module")?[^>]*>(.*?)</script>',html,re.S)
+          assert scripts, "No game scripts found"
+          for i,script in enumerate(scripts):
+              Path(f"/tmp/stickman-script-{i}.mjs").write_text(script)
+          PY
+          for file in /tmp/stickman-script-*.mjs; do node --check "$file"; done
       - name: Install Playwright and browser
         run: |
           python -m pip install playwright==1.55.0 Pillow==11.3.0
