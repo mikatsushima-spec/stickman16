@@ -19,7 +19,7 @@ jobs:
           from pathlib import Path
           import re
           html=Path("index.html").read_text()
-          scripts=re.findall(r'<script(?:\\s+type="module")?[^>]*>(.*?)</script>',html,re.S)
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',html,re.S)
           assert scripts, "No game scripts found"
           for i,script in enumerate(scripts):
               Path(f"/tmp/stickman-script-{i}.mjs").write_text(script)
