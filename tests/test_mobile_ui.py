@@ -69,7 +69,15 @@ with sync_playwright() as p:
         after_pos = page.evaluate("window.__gameDebug().position")
         assert sum(abs(a-b) for a,b in zip(before_pos,after_pos)) > .05, "Joystick did not change position"
         report["checks"].append({"name":"joystick moves camera","status":"passed"})
+        # Aim at a known 3D enemy and verify a real hit removes it.
+        assert page.evaluate("window.__gameTestAimAt(15)"), "Unable to aim at test target"
+        page.wait_for_timeout(100)
+        before_kills = page.evaluate("window.__gameDebug().kills")
         check("fire button", lambda: page.locator("#fire").click())
+        assert page.evaluate("window.__gameDebug().kills") == before_kills + 1, "Aimed shot did not hit"
+        assert not page.evaluate("window.__gameDebug().targets[15].alive"), "Hit enemy did not disappear"
+        report["checks"].append({"name":"shooting removes a real 3D target","status":"passed"})
+        page.screenshot(path=str(OUT / "05-after-hit.png"), full_page=True)
         assert page.locator("#notice").inner_text() in ("MISS — もう少し狙って！","HIT! +1"), "Fire did not invoke shooting logic"
         report["checks"].append({"name":"fire produces shot result","status":"passed"})
         check("radar activates", lambda: (page.locator("#radar").click(), page.locator("#radarCanvas").wait_for(state="visible", timeout=2000)))
