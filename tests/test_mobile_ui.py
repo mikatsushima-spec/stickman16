@@ -40,19 +40,24 @@ with sync_playwright() as p:
         check("3D renderer initialized", lambda: page.locator("#game canvas").wait_for(timeout=20000))
         check("PLAY starts game", lambda: (page.locator("#start").click(), page.locator("#menu").wait_for(state="hidden", timeout=5000)))
         page.screenshot(path=str(OUT / "02-gameplay.png"), full_page=True)
+        assert page.evaluate("window.__gameDebug().playing"), "Game is not running after PLAY"
+        assert page.evaluate("window.__gameDebug().alive") == 16, "Expected 16 targets"
         initial = page.locator("#clock").inner_text()
         page.wait_for_timeout(1300)
         assert page.locator("#clock").inner_text() != initial, "Timer did not advance"
         report["checks"].append({"name": "timer advances", "status": "passed"})
         # A visual delta proves the scene actually responds, not merely that pointer events were sent.
+        before_yaw = page.evaluate("window.__gameDebug().yaw")
         before_swipe = page.locator("#game canvas").screenshot()
         check("swipe controls", lambda: drag(page, 260, 440, 120, 490))
         page.wait_for_timeout(300)
         after_swipe = page.locator("#game canvas").screenshot()
         assert before_swipe != after_swipe, "Swipe did not change rendered scene"
+        assert abs(page.evaluate("window.__gameDebug().yaw")-before_yaw) > .02, "Swipe did not rotate camera"
         report["checks"].append({"name":"swipe changes 3D scene","status":"passed"})
         page.screenshot(path=str(OUT / "03-after-swipe.png"), full_page=True)
         # Hold the virtual joystick to test sustained motion.
+        before_pos = page.evaluate("window.__gameDebug().position")
         before_joy = page.locator("#game canvas").screenshot()
         page.mouse.move(65, 775)
         page.mouse.down()
@@ -61,12 +66,15 @@ with sync_playwright() as p:
         page.mouse.up()
         after_joy = page.locator("#game canvas").screenshot()
         assert before_joy != after_joy, "Joystick did not move camera"
+        after_pos = page.evaluate("window.__gameDebug().position")
+        assert sum(abs(a-b) for a,b in zip(before_pos,after_pos)) > .05, "Joystick did not change position"
         report["checks"].append({"name":"joystick moves camera","status":"passed"})
         check("fire button", lambda: page.locator("#fire").click())
         assert page.locator("#notice").inner_text() in ("MISS — もう少し狙って！","HIT! +1"), "Fire did not invoke shooting logic"
         report["checks"].append({"name":"fire produces shot result","status":"passed"})
         check("radar activates", lambda: (page.locator("#radar").click(), page.locator("#radarCanvas").wait_for(state="visible", timeout=2000)))
         page.screenshot(path=str(OUT / "04-radar.png"), full_page=True)
+        assert page.locator("#radar").is_disabled(), "Radar should only be usable once"
         assert not report["page_errors"], "JavaScript errors: " + "; ".join(report["page_errors"])
         assert not report["console_errors"], "Console errors: " + "; ".join(report["console_errors"])
         report["checks"].append({"name": "no uncaught JavaScript errors", "status": "passed"})
