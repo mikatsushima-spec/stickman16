@@ -61,7 +61,7 @@ let yaw=0,pitch=0,playing=false,time=300,kills=0,radarUntil=0,radarUsed=false,la
 function look(){camera.rotation.y=yaw;camera.rotation.x=pitch}
 // Read-only debug probes used by automated browser tests.
 window.__gameDebug=()=>({playing,time,kills,yaw,pitch,position:camera.position.toArray(),alive:targets.filter(t=>t.alive).length,renderer:!!renderer.domElement,targets:targets.map(t=>({alive:t.alive,position:t.group.position.toArray()}))});
-if(new URLSearchParams(location.search).has('test')){window.__gameTestAimAt=i=>{if(!playing||!targets[i]||!targets[i].alive)return false;const target=targets[i].group.position;camera.position.set(target.x,1.58,Math.min(7.8,target.z+2.2));let p=target.clone().add(new THREE.Vector3(0,1,0)),d=p.sub(camera.position);yaw=Math.atan2(-d.x,-d.z);pitch=Math.max(-.65,Math.min(.65,Math.atan2(d.y,Math.hypot(d.x,d.z))));look();return true};
+if(new URLSearchParams(location.search).has('test')){window.__gameTestAimAt=i=>{if(!playing||!targets[i]||!targets[i].alive)return false;const target=targets[i].group.position;camera.position.set(target.x,1.58,Math.min(7.8,target.z+1.25));let p=target.clone().add(new THREE.Vector3(0,1,0)),d=p.sub(camera.position);yaw=Math.atan2(-d.x,-d.z);pitch=Math.max(-.65,Math.min(.65,Math.atan2(d.y,Math.hypot(d.x,d.z))));look();return true};
 window.__gameTestSetTime=seconds=>{time=Math.max(0,seconds);return time};
 window.__gameTestExpireRadar=()=>{radarUntil=performance.now()-1;return true};
 }
