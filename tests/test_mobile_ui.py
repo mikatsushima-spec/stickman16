@@ -35,6 +35,7 @@ with sync_playwright() as p:
     try:
         check("page loads", lambda: page.goto(URL, wait_until="domcontentloaded", timeout=60000))
         page.wait_for_timeout(4500)
+        check("loading overlay disappears", lambda: page.locator("#loading").wait_for(state="detached", timeout=20000))
         page.screenshot(path=str(OUT / "01-start-screen.png"), full_page=True)
         check("3D renderer initialized", lambda: page.locator("#game canvas").wait_for(timeout=20000))
         check("PLAY starts game", lambda: (page.locator("#start").click(), page.locator("#menu").wait_for(state="hidden", timeout=5000)))
@@ -43,13 +44,31 @@ with sync_playwright() as p:
         page.wait_for_timeout(1300)
         assert page.locator("#clock").inner_text() != initial, "Timer did not advance"
         report["checks"].append({"name": "timer advances", "status": "passed"})
+        # A visual delta proves the scene actually responds, not merely that pointer events were sent.
+        before_swipe = page.locator("#game canvas").screenshot()
         check("swipe controls", lambda: drag(page, 260, 440, 120, 490))
+        page.wait_for_timeout(300)
+        after_swipe = page.locator("#game canvas").screenshot()
+        assert before_swipe != after_swipe, "Swipe did not change rendered scene"
+        report["checks"].append({"name":"swipe changes 3D scene","status":"passed"})
         page.screenshot(path=str(OUT / "03-after-swipe.png"), full_page=True)
-        check("joystick pointer controls", lambda: drag(page, 63, 780, 93, 745))
+        # Hold the virtual joystick to test sustained motion.
+        before_joy = page.locator("#game canvas").screenshot()
+        page.mouse.move(65, 775)
+        page.mouse.down()
+        page.mouse.move(90, 745, steps=8)
+        page.wait_for_timeout(900)
+        page.mouse.up()
+        after_joy = page.locator("#game canvas").screenshot()
+        assert before_joy != after_joy, "Joystick did not move camera"
+        report["checks"].append({"name":"joystick moves camera","status":"passed"})
         check("fire button", lambda: page.locator("#fire").click())
+        assert page.locator("#notice").inner_text() in ("MISS — もう少し狙って！","HIT! +1"), "Fire did not invoke shooting logic"
+        report["checks"].append({"name":"fire produces shot result","status":"passed"})
         check("radar activates", lambda: (page.locator("#radar").click(), page.locator("#radarCanvas").wait_for(state="visible", timeout=2000)))
         page.screenshot(path=str(OUT / "04-radar.png"), full_page=True)
         assert not report["page_errors"], "JavaScript errors: " + "; ".join(report["page_errors"])
+        assert not report["console_errors"], "Console errors: " + "; ".join(report["console_errors"])
         report["checks"].append({"name": "no uncaught JavaScript errors", "status": "passed"})
     except Exception as exc:
         report["fatal_error"] = str(exc)
