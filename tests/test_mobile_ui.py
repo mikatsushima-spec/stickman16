@@ -89,6 +89,10 @@ with sync_playwright() as p:
         check("radar activates", lambda: (page.locator("#radar").click(), page.locator("#radarCanvas").wait_for(state="visible", timeout=2000)))
         page.screenshot(path=str(OUT / "04-radar.png"), full_page=True)
         assert page.locator("#radar").is_disabled(), "Radar should only be usable once"
+        page.evaluate("window.__gameTestExpireRadar()")
+        page.wait_for_timeout(150)
+        assert not page.locator("#radarCanvas").is_visible(), "Radar did not close after its duration"
+        report["checks"].append({"name":"radar closes when nine seconds elapse","status":"passed"})
         # Check landscape rotation and restore portrait; the WebGL viewport must resize.
         page.set_viewport_size({"width": 852, "height": 393})
         page.wait_for_timeout(300)
@@ -115,6 +119,12 @@ with sync_playwright() as p:
         assert page.evaluate("window.__gameDebug().alive") == 16, "Retry failed to reset enemies"
         assert page.evaluate("window.__gameDebug().kills") == 0, "Retry failed to reset score"
         report["checks"].append({"name":"retry resets all targets and score","status":"passed"})
+        assert not page.locator("#radar").is_disabled(), "Retry did not reset radar"
+        page.evaluate("window.__gameTestSetTime(0.05)")
+        page.wait_for_timeout(250)
+        assert "TIME UP" in page.locator("#card h1").inner_text(), "Timeout screen missing"
+        page.screenshot(path=str(OUT / "09-time-up.png"), full_page=True)
+        report["checks"].append({"name":"timeout screen and radar retry reset","status":"passed"})
         assert not report["page_errors"], "JavaScript errors: " + "; ".join(report["page_errors"])
         assert not report["console_errors"], "Console errors: " + "; ".join(report["console_errors"])
         report["checks"].append({"name": "no uncaught JavaScript errors", "status": "passed"})
