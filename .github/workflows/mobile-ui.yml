@@ -1,0 +1,32 @@
+name: Mobile UI and Gameplay Check
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  mobile-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Playwright and browser
+        run: |
+          python -m pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Start local game server
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 > /tmp/stickman-server.log 2>&1 &
+          sleep 2
+      - name: Test mobile UI, 3D rendering and controls
+        run: python tests/test_mobile_ui.py
+      - name: Upload screenshots and test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-ui-screenshots
+          path: test-results/
+          retention-days: 14
